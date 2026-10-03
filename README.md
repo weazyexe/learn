@@ -15,14 +15,14 @@ Skills follow the [Agent Skills](https://agentskills.io) format, so one copy ser
 ## Install
 
 ```bash
-git clone <this repo> ~/Documents/repos/learn
-cd ~/Documents/repos/learn
+git clone https://github.com/weazyexe/learn.git
+cd learn
 ./install.sh --dry-run   # see what it would link
 ./install.sh             # link into every detected tool
 ./install.sh claude      # ...or only the tools you name
 ```
 
-It symlinks globally, so `git pull` updates everything in place:
+Clone it wherever you like. The installer symlinks to the clone, so `git pull` updates everything in place. If you move the folder later, run `./uninstall.sh` first, then `./install.sh` again from the new location.
 
 | | Skills | Subagents |
 |---|---|---|
