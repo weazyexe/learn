@@ -9,6 +9,16 @@ Two principles. They are not tips — they are how you teach him, every time. No
 
 The goal is never "he can recite the fact." The goal is **understanding**: the fact is derivable from foundations he already accepts, connected into his mental model, and therefore self-preserving. Memorized facts rot. Understood facts don't.
 
+## The moves this skill names (map them to your harness)
+
+This skill runs in Claude Code, OpenCode and Codex. Three names below are **moves**, not literal tool names:
+
+- **`quiz`**: a graded question with a known correct answer, graded by you in your next message (✓/✗, correct answer, explanation). **Before your first quiz in a session, read `references/quiz-protocol.md`** (next to this file) and follow it every time.
+- **`ask_user_question`**: a non-graded question (preference, direction, goal). Use your harness's structured question tool: Claude Code `AskUserQuestion`, OpenCode `question`, Codex `request_user_input`. If none is available, ask in plain text and end your turn.
+- **`researcher` subagent**: spawn the `researcher` agent with a self-contained task (it sees none of this conversation). Claude Code: the Agent/Task tool with `subagent_type: researcher`. OpenCode: the `task` tool with the `researcher` agent. Codex: spawn the `researcher` custom agent. If subagents are unavailable, do the web check yourself with your own search/fetch tools. Never skip the verification.
+
+Whenever a session log is active, also follow the "Session log" section below.
+
 ## The philosophy (why this works — internalize it)
 
 Two brains can hold the same propositions and look identical from the outside (same answers to the same questions). But one holds a pile of **disconnected lone facts** (A). The other holds a few **core truths** from which all those facts are derivable (B), so to it the facts are obviously connected. That connection *is* understanding.
@@ -72,9 +82,9 @@ The two principles are *how* you teach. This is *when* — the shape of a teachi
 
 ### Writing quiz options — a construction procedure (applies to every `quiz`)
 
-The tool already tells you to keep options even. That rule isn't enough on its own because it's a *post-hoc audit* — you write a good answer plus some throwaway wrongs, then don't re-scrutinise them. The tell is baked in before any check runs. So don't audit afterwards; **build the options so evenness is automatic**:
+The quiz protocol already tells you to keep options even. That rule isn't enough on its own because it's a *post-hoc audit* — you write a good answer plus some throwaway wrongs, then don't re-scrutinise them. The tell is baked in before any check runs. So don't audit afterwards; **build the options so evenness is automatic**:
 
-1. **Every option is a bare claim — no justification anywhere.** The number-one giveaway is the correct option carrying its own reasoning ("…, because it preserves X") while the distractors are bare, making it longer and more specific. Put *zero* "why" in any option; all reasoning goes in the `explanation` field, which only appears after he answers.
+1. **Every option is a bare claim — no justification anywhere.** The number-one giveaway is the correct option carrying its own reasoning ("…, because it preserves X") while the distractors are bare, making it longer and more specific. Put *zero* "why" in any option (and nothing in option descriptions); all reasoning goes in the explanation of your grading message, which only appears after he answers.
 2. **Write the correct claim first, then mutate it into each distractor.** Take one specific misconception or easily-confused neighbour and state what someone holding it would claim — in the *same* skeleton, grain size, and register as the correct claim. Now every option is "the claim under some belief," and the correct one is just the claim under the *correct* belief. Parallelism falls out by construction instead of being policed.
 3. Each distractor must still be a real error he might actually make (so which one he picks is diagnostic), yet unambiguously wrong on the intended reading — tempting, not tricky.
 4. **No asymmetric bolding.** Don't bold the key concept in one option and not the others — highlighting the term you're testing only in the correct answer flags it instantly. Either bold nothing, or bold the parallel term in every option.
@@ -135,6 +145,40 @@ For **every node** (each unconditional truth *and* each non-trivial reasoning st
 Repeat this full loop per node — don't front-load all the foundations once at the start and then stop checking. Any time a new unconditional truth is needed mid-session, it goes through motivate → establish → connect → quiz-check just like a derived step would.
 
 If you catch yourself asserting a fact he'd have to take on faith — foundational or not — stop: either motivate it and confirm it lands, or ground it in something already established. Unmotivated, unconfirmed facts don't lock in — that's the whole point.
+
+## Session log — the lesson as a readable markdown file
+
+The terminal is hard on the eyes and doesn't render markdown, math or diagrams, so the lesson is mirrored into a markdown file he reads rendered (Obsidian). You write this log yourself with your file tools; no extension does it for you.
+
+**Start of session:** if he named a file, use it. Otherwise propose `lessons/<topic-kebab>.md` under the current working directory and confirm with `ask_user_question` (offer "no log" as an option too). If the file exists, append to it. Never overwrite it. Create the parent folder if needed.
+
+**What goes in.** Append after each step, in order, separated by a blank line:
+
+- His message (skip pure "ok/go on" acknowledgements):
+  ```
+  > [!quote] YOU
+  >
+  > <his text>
+  ```
+- Your lesson prose: the teaching text of your reply, **verbatim** (math, mermaid blocks and embeds included), under:
+  ```
+  > [!abstract] TEACHER
+  ```
+  followed by a blank line and the prose. Don't put chatter about tools, file writes or subagents in the log.
+- A `quiz` or `ask_user_question`: write the question block **before** you ask (so he can read it rendered while answering), with the options **in the exact order you will show them**:
+  ```
+  > [!question] Quiz          (or: Question)
+  > <question>
+  >
+  > 1. <option>
+  > 2. <option>
+  ```
+  **Never write the correct answer or explanation into the log before he has answered.** He reads this file live.
+- After he answers: for a quiz, the verdict block from the quiz protocol. For a question, `> [!example] Answer` + his choice/text.
+
+**What stays out:** tool calls, shell output, file contents, subagent transcripts, researcher briefs (summarize what you learned in the lesson prose instead), and these logging instructions.
+
+Append with whatever is cheapest in your harness (an edit at end of file, or `cat >> file <<'EOF'` via the shell). Keep appends ordered and never rewrite earlier content.
 
 ## Formatting — math renders as LaTeX
 

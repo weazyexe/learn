@@ -5,7 +5,7 @@ description: "Add a correct, minimal visual to a lesson — a diagram or geometr
 
 # Visualize
 
-A picture earns its place only when it shows something words can't — shape, structure, direction, relationship, geometry. This skill produces ONE such picture, guarantees it is **correct** (the maker renders it and looks at it before returning), and drops it into the lesson so it renders inline in the Obsidian `md-log` file.
+A picture earns its place only when it shows something words can't — shape, structure, direction, relationship, geometry. This skill produces ONE such picture, guarantees it is **correct** (the maker renders it and looks at it before returning), and drops it into the lesson so it renders inline in the Obsidian session log.
 
 You are the **creative director**. You decide the exact idea and distill it to its fewest carrying elements. A **maker subagent** does the authoring, rendering, visual verification, and saving, then returns a filename. You embed that filename in your reply.
 
@@ -20,7 +20,7 @@ Do NOT visualize when prose or a single equation already carries it. A decorativ
 
 ## Choose the maker
 
-Two makers, discovered from `.pi/agents/`:
+Two makers, installed as subagents (see this repo's `install.sh`):
 
 - **`mermaid-maker`** — structural/relational visuals: dependency graphs, flowcharts, sequence/state/ER/class diagrams, trees, mindmaps, timelines. This is the default and fits the dependency-graph pedagogy directly.
 - **`svg-maker`** — spatial/geometric visuals Mermaid can't lay out: exact coordinates, geometry figures, number lines, vectors, plots, custom shapes.
@@ -40,39 +40,50 @@ Keep the idea intact but trust the maker to compose; if your brief lists more th
 
 ## Invoke
 
-Dispatch the maker with the `subagent` tool:
+Spawn the maker as a subagent with your harness's mechanism:
+
+- **Claude Code**: the Agent/Task tool with `subagent_type: mermaid-maker` (or `svg-maker`).
+- **OpenCode**: the `task` tool with the `mermaid-maker` / `svg-maker` agent.
+- **Codex**: spawn the `mermaid-maker` / `svg-maker` custom agent.
+
+The maker sees none of this conversation, so the task must be self-contained. Always end it with these three lines (absolute paths):
 
 ```
-subagent(agent="mermaid-maker", task="<your minimal, concrete brief>")
-```
-```
-subagent(agent="svg-maker", task="<your minimal, concrete brief>")
+<your minimal, concrete brief>
+
+scripts: <absolute path of this skill's scripts/ folder>
+viz_dir: <absolute path of the viz folder>
 ```
 
-The maker owns its own purpose-built tools (`write_*`/`edit_*`/`render_*`) — it authors the source, renders it to a PNG, **looks at the PNG and iterates until it is correct and clean**, publishes it into the vault with a unique filename, and returns:
+- **scripts**: the `scripts/` folder next to this SKILL.md (resolve it from the path you loaded this skill from). It holds `render_mermaid.sh`, `render_svg.sh` and `publish.sh`.
+- **viz_dir**: the `viz/` folder **next to the session log** (log at `lessons/tcp.md` → `lessons/viz/`). No log → `<cwd>/viz`.
+
+The maker authors the source in a scratch folder, renders it to a PNG with the scripts, **looks at the PNG and iterates until it is correct and clean**, publishes it into `viz_dir` with a unique filename, and returns:
 
 ```
 RESULT:
 filename: viz-<slug>-<timestamp>.png
-path: <cwd>/viz/viz-<slug>-<timestamp>.png
+path: <viz_dir>/viz-<slug>-<timestamp>.png
 ```
+
+**No subagents available?** Don't visualize. Drop the picture rather than hand-author an unverified one in the main thread.
 
 If it returns `RESULT: NONE`, it couldn't make a correct picture of the brief — simplify or rethink, or decide the visual isn't worth it. Never hand-author or fake a diagram yourself; correctness depends on the maker's render-and-inspect loop.
 
 ## Embed it in the lesson
 
-Put the embed directly in your teaching reply, using Obsidian's wikilink embed with the returned **filename** (not the full path) and a display width:
+Put the embed directly in your teaching reply, as a standard markdown image with a path **relative to the log file** and an Obsidian display width in the alt text:
 
 ```
-![[viz-<slug>-<timestamp>.png|500]]
+![<slug>|500](viz/viz-<slug>-<timestamp>.png)
 ```
 
-That's all. The `md-log` extension mirrors your reply text verbatim into the linked `.md`, and Obsidian resolves the embed by filename anywhere in the vault (the maker saves into the project's `viz` folder, which is inside the vault) — so it renders inline in the lesson automatically. Width `|500` is a good default; use larger for dense diagrams. Introduce the visual in a sentence, then let it carry the idea — don't narrate every element back in prose.
+Obsidian renders it at width 500. Any other markdown viewer (VS Code, GitHub) renders it too, because the path is relative to the log and the `viz/` folder sits next to it. You copy your lesson prose into the session log verbatim, so the embed lands there and renders inline. Width `|500` is a good default; use larger for dense diagrams. Introduce the visual in a sentence, then let it carry the idea — don't narrate every element back in prose.
 
 ## Why this is reliable
 
 - The maker never returns a picture it hasn't **looked at**, so "renders fine but says something false" is caught before it reaches the learner.
 - PNG embed means **what the maker verified is pixel-identical to what the learner sees** — no re-render drift.
-- Unique filenames keep Obsidian's by-filename embed resolution unambiguous.
+- Unique filenames mean an embed never silently points at a different, older picture.
 
-> The makers render through the project's `visual-tools` extension (Mermaid via a bundled `@mermaid-js/mermaid-cli` + installed Chrome; SVG via `rsvg-convert`, fallback ImageMagick). You don't render anything yourself — you only brief the maker and embed the filename it returns.
+> The makers render through this skill's `scripts/` (Mermaid via `mmdc` or `npx @mermaid-js/mermaid-cli`, reusing an installed Chrome; SVG via `rsvg-convert`, fallback ImageMagick). You don't render anything yourself — you only brief the maker and embed the filename it returns.
